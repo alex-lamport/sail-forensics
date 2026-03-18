@@ -16,9 +16,24 @@ Paste any Sail smart account address (EVM) and get:
 - **Protocol Interaction Frequency** — which vaults the agent actually uses
 - **Behavioral State Detection** — Yield Hunting / Rebalancing / Consolidation / Deep Stasis
 - **Gas Cost vs Yield Analysis** — what the position costs if fees stop being sponsored
-- **Capital Distribution Over Time** — moves per day per vault with phase annotations
+- **Capital Distribution Over Time** — moves per day per vault with Phase 1/2 annotations
 - **$SAIL Points Calculator** — accumulated points, FDV scenarios at launch
 - **Supply Dilution Simulator** — your % of total $SAIL with interactive sliders
+
+---
+
+## Screenshots
+
+### Overview — Protocol Frequency & Transaction Timeline
+![Dashboard Overview](screenshots/dashboard.png)
+
+### Gas Cost vs Yield — Business Model Analysis
+![Gas Analysis](screenshots/gas-analysis.png)
+
+### Multi-Layer Yield — $SAIL Points & FDV Scenarios
+![Multi-Layer Yield](screenshots/multi-layer.png)
+
+---
 
 ## Key findings (23 days, €1,452 deployed)
 
@@ -46,7 +61,7 @@ Paste any Sail smart account address (EVM) and get:
 | [Blockscout](https://base.blockscout.com) | ~5h delay | No key needed (default) |
 | [Basescan](https://basescan.org) | Real-time | Free API key from [basescan.org/myapikey](https://basescan.org/myapikey) |
 
-> **Note:** Blockscout is used by default — no API key required. For real-time data (matching what you see on Basescan), enter a free Basescan API key in the optional field.
+> **Note:** Blockscout is used by default — no API key required. For real-time data add a free Basescan API key in the optional field.
 
 ## Stack
 

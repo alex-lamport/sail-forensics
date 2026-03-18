@@ -7,3 +7,2097 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #080a0f;
+    --surface: #0d1117;
+    --border: #1a2030;
+    --border-bright: #2a3550;
+    --cyan: #00e5ff;
+    --green: #00e676;
+    --orange: #ffb300;
+    --red: #ff5252;
+    --purple: #ce93d8;
+    --text: #c9d1d9;
+    --muted: #6e7681;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    padding: 40px;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,229,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1100px; margin: auto; position: relative; z-index: 1; }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .header-left h1 {
+    font-family: var(--sans);
+    font-size: 1.6em;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  .header-left p {
+    color: var(--muted);
+    font-size: 0.78em;
+    margin-top: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,229,255,0.04);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 0.75em;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: all 0.3s;
+  }
+  .dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  .dot.loading { background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+  .dot.error { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  /* ADDRESS INPUT */
+  .input-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+
+  .input-label {
+    font-size: 0.7em;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .addr-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 0.85em;
+    padding: 12px 16px;
+    border-radius: 6px;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+    min-width: 200px;
+  }
+
+  .addr-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 2px rgba(0,229,255,0.1);
+  }
+
+  .scan-btn {
+    background: rgba(0,229,255,0.06);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 0.8em;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .scan-btn:hover {
+    background: var(--cyan);
+    color: #000;
+    box-shadow: 0 0 20px rgba(0,229,255,0.3);
+  }
+
+  .scan-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* METRICS ROW */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    transition: border-color 0.3s;
+  }
+
+  .metric-card:hover { border-color: var(--border-bright); }
+
+  .metric-label {
+    font-size: 0.65em;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-family: var(--sans);
+    font-size: 1.6em;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  .metric-sub {
+    font-size: 0.7em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* BEHAVIORAL STATE BANNER */
+  .state-banner {
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    border: 1px solid;
+    display: none;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .state-banner.show { display: flex; }
+
+  .state-icon { font-size: 1.8em; }
+
+  .state-label {
+    font-size: 0.65em;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+
+  .state-title {
+    font-family: var(--sans);
+    font-size: 1.1em;
+    font-weight: 700;
+  }
+
+  .state-desc {
+    font-size: 0.78em;
+    opacity: 0.8;
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  /* TIMELINE */
+  .section-title {
+    font-size: 0.68em;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 28px;
+  }
+
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 120px 20px 1fr;
+    gap: 0 16px;
+    align-items: start;
+    position: relative;
+    padding-bottom: 0;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+
+  .timeline-item.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .timeline-time {
+    font-size: 0.72em;
+    color: var(--muted);
+    text-align: right;
+    padding-top: 14px;
+    line-height: 1.3;
+  }
+
+  .timeline-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .timeline-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-top: 16px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .timeline-line {
+    width: 1px;
+    flex: 1;
+    min-height: 20px;
+    background: var(--border);
+  }
+
+  .timeline-item:last-child .timeline-line { display: none; }
+
+  .timeline-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+    cursor: default;
+  }
+
+  .timeline-card:hover { border-color: var(--border-bright); }
+
+  .timeline-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .timeline-event {
+    font-size: 0.82em;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .behavior-tag {
+    font-size: 0.65em;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .timeline-detail {
+    font-size: 0.73em;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+
+  .timeline-hash {
+    font-size: 0.65em;
+    color: var(--border-bright);
+    margin-top: 6px;
+    font-family: var(--mono);
+  }
+
+  .timeline-hash a {
+    color: rgba(0,229,255,0.5);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .timeline-hash a:hover { color: var(--cyan); }
+
+  /* PROTOCOL FREQUENCY */
+  .proto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .proto-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .proto-name {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .proto-role {
+    font-size: 0.65em;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .proto-count {
+    font-family: var(--sans);
+    font-size: 1.4em;
+    font-weight: 800;
+    text-align: right;
+  }
+
+  .proto-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .proto-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s cubic-bezier(0.25,1,0.5,1);
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 3em; margin-bottom: 16px; opacity: 0.4; }
+  .empty-title { font-size: 1em; color: var(--text); margin-bottom: 8px; }
+  .empty-sub { font-size: 0.8em; line-height: 1.6; }
+
+  /* ERROR */
+  .error-box {
+    background: rgba(255,82,82,0.05);
+    border: 1px solid rgba(255,82,82,0.3);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 0.8em;
+    color: var(--red);
+    display: none;
+    margin-bottom: 20px;
+  }
+
+  /* BEHAVIORAL SUMMARY TABLE */
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78em;
+    margin-bottom: 28px;
+  }
+
+  .summary-table th {
+    background: rgba(0,229,255,0.04);
+    color: var(--muted);
+    font-size: 0.65em;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .summary-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .summary-table tr:last-child td { border-bottom: none; }
+  .summary-table tr:hover td { background: rgba(255,255,255,0.01); }
+
+  /* RESPONSIVE */
+
+
+
+  /* ── POINTS & AIRDROP LAYER ── */
+  .points-panel {
+    background: linear-gradient(135deg, rgba(167,139,250,0.05) 0%, rgba(0,229,255,0.03) 100%);
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+
+  .points-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .points-title {
+    font-family: var(--sans);
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--purple);
+    letter-spacing: 0.5px;
+  }
+
+  .points-subtitle {
+    font-size: 0.68em;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .points-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .points-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(167,139,250,0.15);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+
+  .points-card .p-label {
+    font-size: 0.63em;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .points-card .p-value {
+    font-family: var(--sans);
+    font-size: 1.4em;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .points-card .p-sub {
+    font-size: 0.68em;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  .scenarios-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78em;
+    margin-top: 16px;
+  }
+
+  .scenarios-table th {
+    background: rgba(167,139,250,0.08);
+    color: var(--muted);
+    font-size: 0.65em;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(167,139,250,0.2);
+  }
+
+  .scenarios-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .scenarios-table tr:last-child td { border-bottom: none; }
+  .scenarios-table tr:hover td { background: rgba(167,139,250,0.04); }
+
+  .protocol-exposure {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(167,139,250,0.2);
+  }
+
+  .exposure-title {
+    font-size: 0.65em;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .exposure-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .exposure-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.75em;
+    transition: all 0.2s;
+  }
+
+  .exposure-pill:hover {
+    border-color: var(--purple);
+    color: var(--purple);
+  }
+
+  .exposure-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--purple);
+    box-shadow: 0 0 6px var(--purple);
+  }
+
+  .airdrop-note {
+    background: rgba(255,179,0,0.04);
+    border: 1px solid rgba(255,179,0,0.15);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 0.76em;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 16px;
+  }
+
+  .airdrop-note strong { color: var(--orange); }
+
+
+  /* ── DILUTION SIMULATOR ── */
+  .dilution-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(167,139,250,0.2);
+  }
+
+  .dilution-title {
+    font-size: 0.65em;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .slider-label {
+    font-size: 0.75em;
+    color: var(--text);
+    white-space: nowrap;
+    min-width: 140px;
+  }
+
+  .slider-label span {
+    color: var(--purple);
+    font-weight: 700;
+    font-family: var(--sans);
+  }
+
+  input[type=range].sail-slider {
+    flex: 1;
+    min-width: 120px;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range].sail-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--purple);
+    box-shadow: 0 0 8px rgba(167,139,250,0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  input[type=range].sail-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 14px rgba(167,139,250,0.9);
+  }
+
+  .dilution-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .dilution-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(167,139,250,0.15);
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: border-color 0.3s;
+  }
+
+  .dilution-card.highlight {
+    border-color: rgba(167,139,250,0.5);
+    background: rgba(167,139,250,0.05);
+  }
+
+  .d-label {
+    font-size: 0.62em;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .d-value {
+    font-family: var(--sans);
+    font-size: 1.3em;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    transition: color 0.3s;
+  }
+
+  .d-sub {
+    font-size: 0.67em;
+    color: var(--muted);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
+  .early-badge {
+    display: inline-block;
+    background: rgba(0,230,118,0.1);
+    border: 1px solid rgba(0,230,118,0.3);
+    color: var(--green);
+    font-size: 0.65em;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 10px;
+  }
+
+  /* ── TIME WINDOW SELECTOR ── */
+  .tw-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .tw-label {
+    font-size: 0.65em;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+
+  .tw-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.72em;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tw-btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .tw-btn.active {
+    background: rgba(0,229,255,0.08);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 8px rgba(0,229,255,0.15);
+  }
+
+  .tw-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .fetch-progress {
+    font-size: 0.7em;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-left: 8px;
+    display: none;
+  }
+
+  /* ── DISTRIBUTION CHART ── */
+  .chart-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+
+  .chart-panel canvas { width: 100% !important; }
+
+  /* ── GAS vs YIELD ── */
+  .gas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .gas-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+
+  .gas-card .g-label {
+    font-size: 0.65em;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .gas-card .g-value {
+    font-family: var(--sans);
+    font-size: 1.5em;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .gas-card .g-sub {
+    font-size: 0.7em;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  .biz-model-box {
+    background: rgba(255,179,0,0.04);
+    border: 1px solid rgba(255,179,0,0.2);
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-size: 0.78em;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .biz-model-box strong { color: var(--orange); }
+
+  .verdict-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-top: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .verdict-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s cubic-bezier(0.25,1,0.5,1);
+  }
+
+  @media (max-width: 680px) {
+    body { padding: 16px; }
+    .timeline-item { grid-template-columns: 80px 16px 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>Sail Agent — Behavioral Forensics</h1>
+      <p>On-Chain Movement Analysis &amp; Pattern Recognition</p>
+    </div>
+    <div class="status-pill">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">STANDBY</span>
+    </div>
+  </div>
+
+  <div class="input-section">
+    <div class="input-label">Smart Account Address (EVM)</div>
+    <div class="input-row">
+      <input class="addr-input" id="addrInput" 
+        value="0x90775c638a859F5D54866A7758bB6f222c4d9Fe5"
+        placeholder="0x...">
+      <select id="networkSelect" style="background:var(--bg);border:1px solid var(--border-bright);color:var(--text);font-family:var(--mono);font-size:0.82em;padding:12px 14px;border-radius:6px;outline:none;cursor:pointer;">
+        <option value="base">Base</option>
+        <option value="ethereum">Ethereum</option>
+        <option value="optimism">Optimism</option>
+      </select>
+      <button class="scan-btn" id="scanBtn" onclick="runScan()">⬡ SCAN</button>
+    </div>
+  </div>
+
+
+  <div class="tw-bar" id="twBar">
+    <span class="tw-label">Window</span>
+    <button class="tw-btn" data-days="7" onclick="setWindow(7)">7D</button>
+    <button class="tw-btn active" data-days="30" onclick="setWindow(30)">30D</button>
+    <button class="tw-btn" data-days="90" onclick="setWindow(90)">90D</button>
+    <button class="tw-btn" data-days="180" onclick="setWindow(180)">6M</button>
+    <button class="tw-btn" data-days="365" onclick="setWindow(365)">1Y</button>
+    <button class="tw-btn" data-days="0" onclick="setWindow(0)">ALL</button>
+    <span class="fetch-progress" id="fetchProgress">Fetching page <span id="fetchPage">1</span>...</span>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="metrics-row" id="metricsRow">
+    <div class="metric-card">
+      <div class="metric-label">Total Transactions</div>
+      <div class="metric-value" id="m-total">—</div>
+      <div class="metric-sub" id="m-total-sub">awaiting scan</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Activity Window</div>
+      <div class="metric-value" id="m-window">—</div>
+      <div class="metric-sub" id="m-window-sub">first → last tx</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Avg. Frequency</div>
+      <div class="metric-value" id="m-freq">—</div>
+      <div class="metric-sub">moves per week</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Dominant Behavior</div>
+      <div class="metric-value" id="m-behavior" style="font-size:1em;">—</div>
+      <div class="metric-sub" id="m-behavior-sub">pattern detected</div>
+    </div>
+  </div>
+
+  <div class="state-banner" id="stateBanner">
+    <div class="state-icon" id="stateIcon">🔍</div>
+    <div>
+      <div class="state-label">Current Agent State</div>
+      <div class="state-title" id="stateTitle">Analyzing...</div>
+      <div class="state-desc" id="stateDesc"></div>
+    </div>
+  </div>
+
+  <div id="mainContent">
+    <div class="empty-state">
+      <div class="empty-icon">⬡</div>
+      <div class="empty-title">No data loaded</div>
+      <div class="empty-sub">Enter the Sail smart account address above<br>and click SCAN to begin behavioral analysis.</div>
+    </div>
+  </div>
+
+  <!-- GAS vs YIELD PANEL -->
+  <div id="gasYieldPanel" style="display:none;">
+    <div class="section-title" style="margin-top:28px;">Gas Cost vs Yield — Business Model Analysis</div>
+    <div class="chart-panel">
+      <div class="gas-grid" id="gasMetrics"></div>
+      <div class="biz-model-box" id="bizModelInsight"></div>
+    </div>
+  </div>
+
+  <!-- DISTRIBUTION CHART PANEL -->
+  <div id="distPanel" style="display:none;">
+    <div class="section-title">Capital Distribution Over Time</div>
+    <div class="chart-panel" style="height:260px;">
+      <div style="font-size:0.7em;color:var(--muted);letter-spacing:1px;margin-bottom:16px;">TOKEN VOLUME PER VAULT — MOVES PER DAY</div>
+      <canvas id="distChart" style="height:200px;"></canvas>
+    </div>
+    <div style="display:flex;gap:20px;margin-top:14px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;background:rgba(255,179,0,0.04);border:1px solid rgba(255,179,0,0.2);border-radius:8px;padding:12px 16px;">
+        <div style="font-size:0.65em;color:var(--orange);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">⚠ Phase 1 — Full Permissions</div>
+        <div style="font-size:0.75em;color:var(--text);line-height:1.6;">Agent configured with all permissions active. Paradoxically, agent was <strong>nearly inactive</strong> — 1-2 moves/day. Hypothesis: with full autonomy, the optimizer found the current allocation already near-optimal and saw no energy barrier worth crossing.</div>
+      </div>
+      <div style="flex:1;min-width:200px;background:rgba(0,229,255,0.03);border:1px solid rgba(0,229,255,0.15);border-radius:8px;padding:12px 16px;">
+        <div style="font-size:0.65em;color:var(--cyan);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">✓ Phase 2 — Default Permissions</div>
+        <div style="font-size:0.75em;color:var(--text);line-height:1.6;">Switched to default permissions. Agent immediately activated a <strong>rhythmic cycling pattern</strong> — 8 moves/day at fixed ~6h intervals. This suggests default config includes a scheduled rebalancing trigger regardless of yield differential.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- POINTS & AIRDROP LAYER PANEL -->
+  <div id="pointsPanel" style="display:none;">
+    <div class="section-title" style="margin-top:0;">$SAIL Points & Airdrop Layer</div>
+    <div class="points-panel">
+      <div class="points-header">
+        <div>
+          <div class="points-title">🪂 Multi-Layer Yield Architecture</div>
+          <div class="points-subtitle" style="margin-top:4px;">Cash Yield + $SAIL Points + Protocol Airdrop Exposure</div>
+        </div>
+      </div>
+
+      <div class="points-grid" id="pointsMetrics"></div>
+
+      <div style="font-size:0.65em;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;margin-top:4px;">$SAIL Token — FDV Scenarios at Launch</div>
+      <table class="scenarios-table" id="scenariosTable">
+        <thead>
+          <tr>
+            <th>FDV Scenario</th>
+            <th>$SAIL Price</th>
+            <th>Points Value</th>
+            <th>Total Return (Cash + Points)</th>
+            <th>Annualized ROI</th>
+          </tr>
+        </thead>
+        <tbody id="scenariosBody"></tbody>
+      </table>
+
+      <div class="dilution-section">
+        <div class="dilution-title">Supply Dilution Simulator — Your % of Total $SAIL</div>
+        <div class="slider-row">
+          <div class="slider-label">Total points in ecosystem: <span id="ecosystemPtsLabel">1,000,000</span></div>
+          <input type="range" class="sail-slider" id="ecosystemSlider"
+            min="100000" max="1000000000" step="500000" value="1000000"
+            oninput="updateDilution()">
+          <div class="slider-label" style="min-width:80px;text-align:right;">
+            <span id="ecosystemScaleLabel">1M pts</span>
+          </div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">Community allocation: <span id="communityPctLabel">20%</span> of supply</div>
+          <input type="range" class="sail-slider" id="communitySlider"
+            min="1" max="50" step="1" value="20"
+            oninput="updateDilution()">
+          <div class="slider-label" style="min-width:80px;text-align:right;">
+            <span id="communityTokensLabel">200M tokens</span>
+          </div>
+        </div>
+        <div class="dilution-results" id="dilutionResults"></div>
+        <div id="dilutionNote" style="font-size:0.74em;color:var(--muted);line-height:1.6;margin-top:4px;"></div>
+      </div>
+
+            <div class="protocol-exposure">
+        <div class="exposure-title">On-Chain Protocol Exposure — Potential Airdrop Eligibility</div>
+        <div class="exposure-grid" id="protocolExposure"></div>
+      </div>
+
+      <div class="airdrop-note" id="airdropNote"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const NETWORKS = {
+  base: {
+    api: 'https://base.blockscout.com/api/v2',
+    explorer: 'https://basescan.org/tx/',
+    name: 'Base'
+  },
+  ethereum: {
+    api: 'https://eth.blockscout.com/api/v2',
+    explorer: 'https://etherscan.io/tx/',
+    name: 'Ethereum'
+  },
+  optimism: {
+    api: 'https://optimism.blockscout.com/api/v2',
+    explorer: 'https://optimistic.etherscan.io/tx/',
+    name: 'Optimism'
+  }
+};
+
+// Known protocol signatures for behavioral labeling
+const KNOWN_PROTOCOLS = {
+  // ── Verified from on-chain analysis ──
+  // Alex's Sail smart account (self-transfers during cycling)
+  '0x90775c638a859f5d54866a7758bb6f222c4d9fe5': { name: 'Sail Smart Account', role: 'Your Agent Wallet', color: '#6e7681' },
+  // Null address — mint/burn of vault shares
+  '0x0000000000000000000000000000000000000000': { name: 'Null Address', role: 'Vault Share Mint/Burn', color: '#444' },
+  // fEURC — Fluid EURC vault on Morpho/Base
+  '0x52aa899454998be5b000ad077a46bbe360f4e497': { name: 'Fluid EURC (fEURC)', role: 'Morpho Vault — Fluid', color: '#00e676' },
+  // gteurcb — Gauntlet EURC Balanced vault on Morpho/Base
+  '0x94af495de1f56aa5576deb17986bdcee5dd9778d': { name: 'Gauntlet EURC (gteurcb)', role: 'Morpho Vault — Gauntlet', color: '#ce93d8' },
+  // aBasEURC — Aave Base EURC (appeared once on 05 Mar)
+  '0x90da01cfbb14a9f6183d7d0687c0c6ceeddf025b': { name: 'Aave Base EURC', role: 'Aave v3 — Base', color: '#b6509e' },
+
+  // ── Generic known protocols ──
+  '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2': { name: 'Aave v3', role: 'Lending Market', color: '#b6509e' },
+  '0x794a61358d6845594f94dc1db02a252b5b4814ad': { name: 'Aave v3', role: 'Lending Market', color: '#b6509e' },
+  '0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb': { name: 'Morpho Blue', role: 'Lending Protocol', color: '#2470ff' },
+  '0x628ff693426583d9a7fb391e54366292f509d457': { name: 'Moonwell', role: 'Lending Market', color: '#53cbc8' },
+  '0x27182842e098f60e3d576794a5bfcec5de6a68a': { name: 'Euler Finance', role: 'Lending Market', color: '#e8b34b' },
+  '0xd3b5b60020504bc3489d6949d545893982ba3011': { name: 'Tokemak', role: 'Liquidity Layer', color: '#8b5cf6' },
+};
+
+function getProtocolInfo(address) {
+  const lower = (address || '').toLowerCase();
+  return KNOWN_PROTOCOLS[lower] || null;
+}
+
+// Behavioral classification logic
+function classifyBehavior(txs) {
+  if (!txs.length) return { label: 'No Activity', icon: '💤', color: '#444', desc: 'No transactions found.' };
+  
+  const now = Date.now() / 1000;
+  const recent = txs.filter(tx => now - parseInt(tx.timeStamp) < 7 * 86400);
+  const week2 = txs.filter(tx => now - parseInt(tx.timeStamp) < 14 * 86400 && now - parseInt(tx.timeStamp) >= 7 * 86400);
+  
+  const recentCount = recent.length;
+  const olderCount = week2.length;
+
+  // Burst detection
+  if (recentCount > 5) {
+    return {
+      label: 'YIELD HUNTING',
+      icon: '🎯',
+      color: 'var(--cyan)',
+      bgColor: 'rgba(0,229,255,0.04)',
+      borderColor: 'rgba(0,229,255,0.2)',
+      desc: `${recentCount} moves in last 7 days — agent is actively scanning for APY differentials. High dispersion detected: optimizer crossing multiple "energy barriers".`
+    };
+  }
+
+  if (recentCount === 0 && olderCount === 0) {
+    return {
+      label: 'DEEP STASIS',
+      icon: '⏸',
+      color: 'var(--muted)',
+      bgColor: 'rgba(255,255,255,0.02)',
+      borderColor: 'rgba(255,255,255,0.08)',
+      desc: 'No activity in 14 days. APY convergence across venues — cost of movement exceeds expected yield improvement. Agent is holding position.'
+    };
+  }
+
+  if (recentCount === 0 && olderCount > 0) {
+    return {
+      label: 'CONSOLIDATION',
+      icon: '🛡',
+      color: 'var(--green)',
+      bgColor: 'rgba(0,230,118,0.04)',
+      borderColor: 'rgba(0,230,118,0.2)',
+      desc: 'Activity detected 7-14 days ago, now stable. Agent found an optimal allocation and is holding — entropy term dominant in scoring function.'
+    };
+  }
+
+  if (recentCount >= 2 && recentCount <= 5) {
+    return {
+      label: 'REBALANCING',
+      icon: '⚖️',
+      color: 'var(--orange)',
+      bgColor: 'rgba(255,179,0,0.04)',
+      borderColor: 'rgba(255,179,0,0.2)',
+      desc: `${recentCount} moves this week — agent performing tactical rebalancing. Portfolio size sensitivity parameters adjusting allocation weights.`
+    };
+  }
+
+  return {
+    label: 'MONITORING',
+    icon: '📡',
+    color: 'var(--purple)',
+    bgColor: 'rgba(206,147,216,0.04)',
+    borderColor: 'rgba(206,147,216,0.2)',
+    desc: 'Low-frequency activity. Agent is in observation mode — scanning markets but not yet finding sufficient yield differential to trigger reallocation.'
+  };
+}
+
+function classifyTxBehavior(tx, i, allTxs) {
+  const value = parseFloat(tx.value) / 1e18;
+  const prev = allTxs[i + 1];
+  const timeSincePrev = prev ? parseInt(tx.timeStamp) - parseInt(prev.timeStamp) : null;
+  
+  // Classify based on patterns
+  if (timeSincePrev !== null && timeSincePrev < 3600) {
+    return { label: 'Rapid Sequence', color: 'var(--red)', bg: 'rgba(255,82,82,0.1)', border: 'rgba(255,82,82,0.3)', detail: 'Part of a burst — multi-step reallocation or protocol migration.' };
+  }
+  if (value === 0) {
+    return { label: 'Contract Call', color: 'var(--cyan)', bg: 'rgba(0,229,255,0.08)', border: 'rgba(0,229,255,0.25)', detail: 'Zero-value interaction — approval, harvest, or position update.' };
+  }
+  if (value > 1000) {
+    return { label: 'Capital Move', color: 'var(--orange)', bg: 'rgba(255,179,0,0.08)', border: 'rgba(255,179,0,0.25)', detail: `Large capital deployment: ${value.toFixed(4)} ETH. Significant reallocation event.` };
+  }
+  return { label: 'Yield Op', color: 'var(--green)', bg: 'rgba(0,230,118,0.08)', border: 'rgba(0,230,118,0.25)', detail: 'Standard yield operation — deposit, withdraw, or rebalance trigger.' };
+}
+
+function fmtDate(ts) {
+  const d = new Date(parseInt(ts) * 1000);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + '\n' +
+         d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtAge(ts) {
+  const diff = Date.now() / 1000 - parseInt(ts);
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById('statusDot');
+  const label = document.getElementById('statusText');
+  dot.className = 'dot ' + state;
+  label.textContent = text;
+}
+
+// ── TIME WINDOW STATE ──
+let currentWindowDays = 30;
+
+function setWindow(days) {
+  currentWindowDays = days;
+  document.querySelectorAll('.tw-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.days) === days);
+  });
+  runScan();
+}
+
+function normalizeTokenTx(tx) {
+  return {
+    hash: tx.transaction_hash || tx.tx_hash || '',
+    contractAddress: tx.token?.address || '',
+    tokenSymbol: tx.token?.symbol || 'UNKNOWN',
+    tokenName: tx.token?.name || '',
+    tokenType: tx.token?.type || '',
+    from: tx.from?.hash || '',
+    to: tx.to?.hash || '',
+    total: tx.total?.value || '0',
+    decimals: parseInt(tx.total?.decimals || '18'),
+    timeStamp: String(Math.floor(new Date(tx.timestamp).getTime() / 1000))
+  };
+}
+
+function normalizeTx(tx) {
+  return {
+    hash: tx.hash,
+    timeStamp: String(Math.floor(new Date(tx.timestamp).getTime() / 1000)),
+    from: tx.from?.hash || '',
+    to: tx.to?.hash || '',
+    value: tx.value || '0',
+    gasUsed: tx.gas_used || '0',
+    blockNumber: String(tx.block_number || 0),
+    functionName: tx.method || ''
+  };
+}
+
+async function fetchAllPages(baseUrl, windowDays, progressId, pageId) {
+  const progressEl = document.getElementById(progressId);
+  const pageEl = document.getElementById(pageId);
+  const cutoff = windowDays > 0 ? (Date.now() / 1000) - (windowDays * 86400) : 0;
+  const MAX_PAGES = windowDays === 0 ? 20 : 10;
+
+  let allItems = [];
+  let nextPageParams = null;
+  let page = 1;
+  let done = false;
+
+  if (progressEl) progressEl.style.display = 'inline';
+
+  while (!done && page <= MAX_PAGES) {
+    if (pageEl) pageEl.textContent = page;
+
+    let url = baseUrl;
+    if (nextPageParams) {
+      const params = new URLSearchParams(nextPageParams).toString();
+      url = baseUrl + '?' + params;
+    }
+
+    const res = await fetch(url);
+    if (!res.ok) break;
+    const data = await res.json();
+
+    const items = data.items || [];
+    if (!items.length) break;
+
+    // Check if oldest item in this page is beyond our cutoff
+    for (const item of items) {
+      const ts = Math.floor(new Date(item.timestamp).getTime() / 1000);
+      if (windowDays > 0 && ts < cutoff) {
+        done = true;
+        break;
+      }
+      allItems.push(item);
+    }
+
+    nextPageParams = data.next_page_params;
+    if (!nextPageParams) break;
+
+    page++;
+    // Small delay to be polite to the API
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  if (progressEl) progressEl.style.display = 'none';
+  return allItems;
+}
+
+async function runScan() {
+  const addr = document.getElementById('addrInput').value.trim();
+  const network = document.getElementById('networkSelect').value;
+  const net = NETWORKS[network];
+  const btn = document.getElementById('scanBtn');
+  const errorBox = document.getElementById('errorBox');
+
+  errorBox.style.display = 'none';
+
+  if (!addr || !addr.startsWith('0x')) {
+    errorBox.textContent = 'Invalid address format. Must start with 0x';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  // Disable all tw buttons during scan
+  document.querySelectorAll('.tw-btn').forEach(b => b.disabled = true);
+  btn.disabled = true;
+  btn.textContent = '⬡ SCANNING...';
+  setStatus('loading', 'FETCHING DATA');
+
+  try {
+    // PRIMARY: Token transfers — paginated
+    const rawToken = await fetchAllPages(
+      `${net.api}/addresses/${addr}/token-transfers`,
+      currentWindowDays,
+      'fetchProgress',
+      'fetchPage'
+    );
+    const tokenTxs = rawToken.map(normalizeTokenTx);
+
+    // SECONDARY: Normal txs — single page (for gas/method context only)
+    const res2 = await fetch(`${net.api}/addresses/${addr}/transactions`);
+    const rawTxs = res2.ok ? (await res2.json()).items || [] : [];
+    const txs = rawTxs.map(normalizeTx);
+
+    const windowLabel = currentWindowDays === 0 ? 'ALL' : currentWindowDays + 'D';
+    setStatus('live', `LIVE — ${net.name.toUpperCase()} · ${windowLabel} · ${tokenTxs.length} transfers`);
+    renderResults(addr, txs, tokenTxs, net);
+
+  } catch (err) {
+    setStatus('error', 'ERROR');
+    errorBox.textContent = 'Scan failed: ' + err.message + '. Check network or try again.';
+    errorBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬡ RESCAN';
+    document.querySelectorAll('.tw-btn').forEach(b => b.disabled = false);
+  }
+}
+
+function renderResults(addr, txs, tokenTxs, net) {
+  const content = document.getElementById('mainContent');
+
+  if (!txs.length && !tokenTxs.length) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔭</div>
+        <div class="empty-title">No transactions found</div>
+        <div class="empty-sub">This address has no activity on ${net.name}.<br>Try switching network or verify the address.</div>
+      </div>`;
+    document.getElementById('stateBanner').classList.remove('show');
+    return;
+  }
+
+  // --- METRICS — token transfers are the primary signal ---
+  const allTimes = tokenTxs.map(t => parseInt(t.timeStamp)).filter(Boolean);
+  const first = allTimes.length ? Math.min(...allTimes) : null;
+  const last = allTimes.length ? Math.max(...allTimes) : null;
+  const windowDays = first && last ? Math.ceil((last - first) / 86400) : 0;
+  const weeksActive = windowDays / 7 || 1;
+  const freq = (tokenTxs.length / weeksActive).toFixed(1);
+
+  // Use tokenTxs as primary behavioral signal for Sail agent
+  const fakeTxsForBehavior = tokenTxs.map(t => ({ timeStamp: t.timeStamp }));
+  const behavior = classifyBehavior(fakeTxsForBehavior);
+
+  // Unique tokens moved
+  const uniqueTokens = [...new Set(tokenTxs.map(t => t.tokenSymbol))].filter(Boolean);
+
+  document.getElementById('m-total').textContent = tokenTxs.length;
+  document.getElementById('m-total-sub').textContent = uniqueTokens.join(', ') || 'token transfers';
+  document.getElementById('m-window').textContent = windowDays + 'd';
+  document.getElementById('m-window-sub').textContent = first ? new Date(first * 1000).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+  document.getElementById('m-freq').textContent = freq;
+  document.getElementById('m-behavior').textContent = behavior.label;
+  document.getElementById('m-behavior').style.color = behavior.color;
+  document.getElementById('m-behavior-sub').textContent = behavior.icon + ' pattern confirmed';
+
+  // --- STATE BANNER ---
+  const banner = document.getElementById('stateBanner');
+  banner.style.background = behavior.bgColor || 'rgba(255,255,255,0.02)';
+  banner.style.borderColor = behavior.borderColor || 'var(--border)';
+  banner.style.color = behavior.color;
+  document.getElementById('stateIcon').textContent = behavior.icon;
+  document.getElementById('stateTitle').textContent = behavior.label;
+  document.getElementById('stateDesc').textContent = behavior.desc;
+  banner.classList.add('show');
+
+  // --- PROTOCOL FREQUENCY — from token contract addresses ---
+  const protoCounts = {};
+  const allInteracted = [...tokenTxs.map(t => t.to), ...tokenTxs.map(t => t.contractAddress)];
+  allInteracted.forEach(addr => {
+    if (!addr) return;
+    const k = addr.toLowerCase();
+    protoCounts[k] = (protoCounts[k] || 0) + 1;
+  });
+
+  // Get top 6 addresses
+  const topProtos = Object.entries(protoCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+
+  const maxCount = topProtos[0]?.[1] || 1;
+
+  // Build token name map from tokenTxs
+  const tokenNames = {};
+  tokenTxs.forEach(tx => {
+    if (tx.contractAddress && tx.tokenSymbol) {
+      tokenNames[tx.contractAddress.toLowerCase()] = tx.tokenSymbol;
+    }
+  });
+
+  let protoHTML = '';
+  topProtos.forEach(([addr, count]) => {
+    const known = getProtocolInfo(addr);
+    const name = known?.name || (tokenNames[addr] ? tokenNames[addr] + ' Contract' : addr.slice(0,6) + '...' + addr.slice(-4));
+    const role = known?.role || 'Unknown Protocol';
+    const color = known?.color || 'var(--cyan)';
+    const pct = Math.round((count / maxCount) * 100);
+    protoHTML += `
+      <div class="proto-card">
+        <div>
+          <div class="proto-name">${name}</div>
+          <div class="proto-role">${role}</div>
+          <div class="proto-bar"><div class="proto-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+        </div>
+        <div class="proto-count" style="color:${color}">${count}</div>
+      </div>`;
+  });
+
+  // --- TIMELINE — built on token transfers (agent moves) ---
+  const displayTxs = tokenTxs.slice(0, 20);
+  let timelineHTML = '';
+
+  displayTxs.forEach((tx, i) => {
+    // Classify token transfer behavior
+    const now2 = Date.now() / 1000;
+    const prev = displayTxs[i + 1];
+    const timeSincePrev = prev ? parseInt(tx.timeStamp) - parseInt(prev.timeStamp) : null;
+    const amount = parseFloat(tx.total) / Math.pow(10, tx.decimals || 18);
+    const amtFormatted = isNaN(amount) ? '—' : amount.toLocaleString('en-US', {maximumFractionDigits: 2});
+
+    let beh;
+    if (timeSincePrev !== null && Math.abs(timeSincePrev) < 600) {
+      beh = { label: 'Burst Move', color: 'var(--red)', bg: 'rgba(255,82,82,0.08)', border: 'rgba(255,82,82,0.3)',
+              detail: 'Rapid sequence — agent executing multi-step reallocation within minutes.' };
+    } else if (tx.from.toLowerCase() === addr.toLowerCase()) {
+      beh = { label: 'Outflow', color: 'var(--orange)', bg: 'rgba(255,179,0,0.08)', border: 'rgba(255,179,0,0.25)',
+              detail: `Agent withdrew ${amtFormatted} ${tx.tokenSymbol} — exiting position or rebalancing to new venue.` };
+    } else {
+      beh = { label: 'Inflow', color: 'var(--green)', bg: 'rgba(0,230,118,0.08)', border: 'rgba(0,230,118,0.25)',
+              detail: `Agent deposited ${amtFormatted} ${tx.tokenSymbol} — allocating capital to yield source.` };
+    }
+
+    const fromShort = tx.from.slice(0,6) + '...' + tx.from.slice(-4);
+    const toShort = tx.to.slice(0,6) + '...' + tx.to.slice(-4);
+    const explorerUrl = net.explorer + tx.hash;
+    const delay = i * 40;
+
+    timelineHTML += `
+      <div class="timeline-item" style="transition-delay:${delay}ms">
+        <div class="timeline-time">${fmtDate(tx.timeStamp)}<br><span style="color:var(--muted);font-size:0.85em;">${fmtAge(tx.timeStamp)}</span></div>
+        <div class="timeline-connector">
+          <div class="timeline-dot" style="background:${beh.color};box-shadow:0 0 8px ${beh.color}40;"></div>
+          <div class="timeline-line"></div>
+        </div>
+        <div class="timeline-card" style="border-color:${beh.border};background:${beh.bg}40;">
+          <div class="timeline-card-header">
+            <div class="timeline-event">${amtFormatted} ${tx.tokenSymbol} &nbsp;${fromShort} → ${toShort}</div>
+            <span class="behavior-tag" style="color:${beh.color};background:${beh.bg};border:1px solid ${beh.border};">${beh.label}</span>
+          </div>
+          <div class="timeline-detail">${beh.detail}</div>
+          <div class="timeline-hash">
+            TX: <a href="${explorerUrl}" target="_blank">${tx.hash.slice(0,20)}...${tx.hash.slice(-8)}</a>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  // --- BEHAVIORAL SUMMARY TABLE ---
+  const now = Date.now() / 1000;
+  const phases = [
+    { label: 'Last 24h', txs: txs.filter(t => now - parseInt(t.timeStamp) < 86400) },
+    { label: 'Last 7 days', txs: txs.filter(t => now - parseInt(t.timeStamp) < 7*86400) },
+    { label: 'Last 30 days', txs: txs.filter(t => now - parseInt(t.timeStamp) < 30*86400) },
+    { label: 'All time', txs: txs },
+  ];
+
+  let tableHTML = `
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Period</th>
+          <th>Transactions</th>
+          <th>Behavioral Pattern</th>
+          <th>Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  phases.forEach(phase => {
+    const b = classifyBehavior(phase.txs);
+    const interp = phase.txs.length === 0 ? 'Agent inactive — holding current allocation' :
+                   phase.txs.length > 8 ? 'High-frequency reallocation — APY gradient steep' :
+                   phase.txs.length > 3 ? 'Active optimization cycle in progress' :
+                   'Low activity — near-optimal allocation reached';
+    tableHTML += `
+      <tr>
+        <td style="color:#fff;font-weight:600;">${phase.label}</td>
+        <td style="color:${b.color};font-weight:700;">${phase.txs.length}</td>
+        <td><span style="color:${b.color}">${b.icon} ${b.label}</span></td>
+        <td style="color:var(--muted);font-size:0.9em;">${interp}</td>
+      </tr>`;
+  });
+  tableHTML += `</tbody></table>`;
+
+  // --- RENDER ALL ---
+  content.innerHTML = `
+    <div class="section-title">Protocol Interaction Frequency</div>
+    <div class="proto-grid">${protoHTML || '<div style="color:var(--muted);font-size:0.8em;padding:20px;">No protocol data available</div>'}</div>
+
+    <div class="section-title">Behavioral Summary</div>
+    ${tableHTML}
+
+    <div class="section-title">Transaction Timeline — Last ${displayTxs.length} Events</div>
+    <div class="timeline">${timelineHTML}</div>
+  `;
+
+  // --- NEW PANELS ---
+  renderGasYield(tokenTxs, addr);
+  renderDistChart(tokenTxs, addr);
+  renderPointsLayer(tokenTxs, addr);
+
+  // Animate timeline items
+  setTimeout(() => {
+    document.querySelectorAll('.timeline-item').forEach((el, i) => {
+      setTimeout(() => el.classList.add('visible'), i * 40);
+    });
+  }, 50);
+}
+
+
+// ── GAS vs YIELD ANALYSIS ──────────────────────────────
+function renderGasYield(tokenTxs, addr) {
+  const panel = document.getElementById('gasYieldPanel');
+  const metricsDiv = document.getElementById('gasMetrics');
+  const bizDiv = document.getElementById('bizModelInsight');
+  if (!panel || !metricsDiv || !bizDiv) return;
+  panel.style.display = 'block';
+
+  // Estimate: Base avg gas per ERC20 transfer ~65,000 units, ~0.0001 ETH at normal conditions
+  // With sponsored fees = 0. But we model "when not sponsored"
+  const GAS_PER_TX_ETH = 0.0001; // ~$0.25 at ETH $2500
+  const ETH_USD = 2500;
+  const GAS_PER_TX_USD = GAS_PER_TX_ETH * ETH_USD;
+
+  const totalMoves = tokenTxs.length;
+  const totalGasUSD = totalMoves * GAS_PER_TX_USD;
+  const totalGasETH = totalMoves * GAS_PER_TX_ETH;
+
+  // Estimate capital = max single transfer amount (proxy for position size)
+  // Summing all inflows is wrong because agent cycles the same capital repeatedly
+  let maxSingleTransfer = 0;
+  tokenTxs.forEach(tx => {
+    const amt = parseFloat(tx.total) / Math.pow(10, tx.decimals || 18);
+    if (!isNaN(amt) && amt > 0 && amt < 50000) {
+      maxSingleTransfer = Math.max(maxSingleTransfer, amt);
+    }
+  });
+  // Capital = largest single move, scaled up slightly to account for full position
+  // If we can't compute, fall back to 5600
+  const capital = Math.abs(maxSingleTransfer > 100 ? maxSingleTransfer * 1.05 : 5600);
+
+  // APY estimates for EURC on Morpho/Moonwell
+  const BASE_APY = 0.0016;       // 0.16% base
+  const INCENTIVE_APY = 0.125;   // ~12.5% WELL incentives (variable, declining)
+  const TOTAL_APY = BASE_APY + INCENTIVE_APY;
+
+  // Window in days
+  const times = tokenTxs.map(t => parseInt(t.timeStamp)).filter(Boolean);
+  const windowDays = times.length > 1 ? (Math.max(...times) - Math.min(...times)) / 86400 : 10;
+  const windowYears = windowDays / 365;
+
+  const grossYield = capital * TOTAL_APY * windowYears;
+  const netYieldSponsored = grossYield; // fees sponsored now
+  const netYieldNotSponsored = grossYield - totalGasUSD;
+  const gasPct = grossYield > 0 ? ((totalGasUSD / grossYield) * 100).toFixed(1) : '—';
+  const netPct = grossYield > 0 ? (((grossYield - totalGasUSD) / grossYield) * 100).toFixed(1) : '—';
+
+  const isViable = netYieldNotSponsored > 0;
+  const verdictColor = isViable ? 'var(--green)' : 'var(--red)';
+  const verdictWidth = Math.min(Math.abs(parseFloat(gasPct) || 0), 100);
+
+  const fmtUSD = v => (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtUSDpos = v => '$' + Math.abs(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  metricsDiv.innerHTML = `
+    <div class="gas-card">
+      <div class="g-label">Estimated Capital</div>
+      <div class="g-value" style="color:var(--text)">$${Math.abs(capital).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+      <div class="g-sub">EURC deployed in agent</div>
+    </div>
+    <div class="gas-card">
+      <div class="g-label">Gross Yield (${windowDays.toFixed(0)}d)</div>
+      <div class="g-value" style="color:var(--green)">+${fmtUSD(grossYield)}</div>
+      <div class="g-sub">APY ~${(TOTAL_APY*100).toFixed(1)}% (base + WELL incentives)</div>
+    </div>
+    <div class="gas-card">
+      <div class="g-label">Gas Cost if NOT Sponsored</div>
+      <div class="g-value" style="color:var(--red)">${fmtUSD(totalGasUSD)}</div>
+      <div class="g-sub">${totalMoves} moves × ~${fmtUSD(GAS_PER_TX_USD)} each</div>
+    </div>
+    <div class="gas-card">
+      <div class="g-label">Net Yield (fees unsponsored)</div>
+      <div class="g-value" style="color:${verdictColor}">${fmtUSD(netYieldNotSponsored)}</div>
+      <div class="g-sub">Gas eats ~${gasPct}% of gross yield</div>
+    </div>
+  `;
+
+  bizDiv.innerHTML = `
+    <strong>Business Model Insight — The Sponsored Fee Question</strong><br><br>
+    Currently Sail sponsors all transaction fees, meaning the <strong>${totalMoves} agent moves</strong> 
+    in this ${windowDays.toFixed(0)}-day window cost the user nothing. 
+    But at current gas rates, those moves would cost approximately <strong>${fmtUSD(totalGasUSD)}</strong>.<br><br>
+    
+    With a gross yield of ~<strong>${fmtUSD(grossYield)}</strong> on ~${fmtUSD(capital)} deployed over ${windowDays.toFixed(0)} days, 
+    gas would consume <strong>~${gasPct}%</strong> of returns — leaving net yield of 
+    <strong style="color:${verdictColor}">${fmtUSD(netYieldNotSponsored)}</strong> ${isViable ? '✓ still positive' : '✗ negative'}.<br><br>
+
+    <strong style="color:var(--orange)">The key question for Sail's model:</strong> 
+    WELL incentives (which drive most of the yield) are declining as TVL grows. 
+    If base APY reverts to ~0.16% and fees become unsponsored, 
+    the math inverts — an agent cycling every 6 hours on a ~${fmtUSD(capital)} position 
+    would be <strong>net negative</strong> regardless of optimization quality. 
+    This is not a criticism of Sail — it is the structural constraint of a nascent EURC market on Base.
+    
+    <div class="verdict-bar">
+      <div class="verdict-fill" style="width:${verdictWidth}%;background:${verdictColor};box-shadow:0 0 8px ${verdictColor}40;"></div>
+    </div>
+    <div style="font-size:0.7em;color:var(--muted);margin-top:6px;">Gas as % of gross yield — ${gasPct}% (lower is better)</div>
+  `;
+}
+
+// ── DISTRIBUTION CHART ──────────────────────────────────
+let distChartInstance = null;
+
+function renderDistChart(tokenTxs, addr) {
+  const panel = document.getElementById('distPanel');
+  const ctx = document.getElementById('distChart');
+  if (!panel || !ctx) return;
+  panel.style.display = 'block';
+
+  // Group by token symbol and count moves per day
+  const dayMap = {};
+  tokenTxs.forEach(tx => {
+    const d = new Date(parseInt(tx.timeStamp) * 1000).toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
+    if (!dayMap[d]) dayMap[d] = {};
+    const sym = tx.tokenSymbol || 'UNKNOWN';
+    dayMap[d][sym] = (dayMap[d][sym] || 0) + 1;
+  });
+
+  const labels = Object.keys(dayMap).reverse();
+  const allTokens = [...new Set(tokenTxs.map(t => t.tokenSymbol).filter(Boolean))];
+  
+  const colors = {
+    'fEURC':   { border: '#00e5ff', bg: 'rgba(0,229,255,0.15)' },
+    'gteurcb': { border: '#ce93d8', bg: 'rgba(206,147,216,0.15)' },
+    'EURC':    { border: '#00e676', bg: 'rgba(0,230,118,0.15)' },
+    'USDC':    { border: '#ffb300', bg: 'rgba(255,179,0,0.15)' },
+  };
+
+  const datasets = allTokens.map((sym, i) => {
+    const palette = colors[sym] || { 
+      border: ['#ff5252','#4fc3f7','#fff176','#a5d6a7'][i % 4], 
+      bg: ['rgba(255,82,82,0.15)','rgba(79,195,247,0.15)','rgba(255,241,118,0.15)','rgba(165,214,167,0.15)'][i % 4] 
+    };
+    return {
+      label: sym,
+      data: labels.map(d => dayMap[d]?.[sym] || 0),
+      borderColor: palette.border,
+      backgroundColor: palette.bg,
+      borderWidth: 2,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 4,
+      pointHoverRadius: 7,
+      pointBackgroundColor: palette.border,
+    };
+  });
+
+  if (distChartInstance) distChartInstance.destroy();
+
+  Chart.defaults.color = '#6e7681';
+  Chart.defaults.font.family = "'JetBrains Mono', monospace";
+
+  distChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { 
+            color: '#c9d1d9', 
+            font: { size: 11 },
+            boxWidth: 12,
+            padding: 16
+          }
+        },
+        tooltip: {
+          backgroundColor: '#0d1117',
+          borderColor: '#2a3550',
+          borderWidth: 1,
+          titleColor: '#fff',
+          bodyColor: '#c9d1d9',
+          callbacks: {
+            title: items => 'Date: ' + items[0].label,
+            label: item => ` ${item.dataset.label}: ${item.raw} moves`
+          }
+        },
+        annotation: {
+          annotations: {
+            phase1: {
+              type: 'box',
+              xMin: 0,
+              xMax: (() => {
+                return labels.findIndex(l => l.includes('Mar')) - 1;
+              })(),
+              backgroundColor: 'rgba(255,179,0,0.04)',
+              borderColor: 'rgba(255,179,0,0.25)',
+              borderWidth: 1,
+              borderDash: [4,3],
+              label: {
+                display: true,
+                content: '⚠ Phase 1 — Inactive',
+                color: 'rgba(255,179,0,0.7)',
+                font: { size: 9, weight: '600' },
+                position: { x: 'start', y: 'end' },
+                padding: { top: 4, left: 6, right: 6, bottom: 4 },
+                backgroundColor: 'rgba(13,17,23,0.75)',
+              }
+            },
+            phase2: {
+              type: 'box',
+              xMin: (() => {
+                return labels.findIndex(l => l.includes('Mar'));
+              })(),
+              xMax: labels.length - 1,
+              backgroundColor: 'rgba(255,255,255,0.02)',
+              borderColor: 'rgba(255,255,255,0.35)',
+              borderWidth: 1,
+              borderDash: [4,3],
+              shadowColor: 'rgba(255,255,255,0.15)',
+              shadowBlur: 12,
+              label: {
+                display: true,
+                content: '✦ Phase 2 — Active',
+                color: 'rgba(255,255,255,0.9)',
+                font: { size: 9, weight: '700' },
+                position: { x: 'start', y: 'end' },
+                padding: { top: 4, left: 6, right: 6, bottom: 4 },
+                backgroundColor: 'rgba(255,255,255,0.08)',
+              }
+            },
+            dividerLine: {
+              type: 'line',
+              xMin: (() => {
+                return labels.findIndex(l => l.includes('Mar')) - 0.5;
+              })(),
+              xMax: (() => {
+                return labels.findIndex(l => l.includes('Mar')) - 0.5;
+              })(),
+              borderColor: 'rgba(255,255,255,0.4)',
+              borderWidth: 1.5,
+              borderDash: [5,3],
+              label: {
+                display: true,
+                content: 'config change →',
+                color: 'rgba(255,255,255,0.45)',
+                font: { size: 8 },
+                position: 'end',
+                backgroundColor: 'rgba(13,17,23,0.0)',
+                padding: 3,
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#6e7681', font: { size: 10 } }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#6e7681', font: { size: 10 }, stepSize: 1 },
+          title: { display: true, text: 'Moves per day', color: '#6e7681', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+
+// ── DILUTION SIMULATOR STATE ──
+let _userPoints = 0;
+let _windowDays = 23;
+let _capital = 1452;
+let _cashYieldUSD = 0;
+
+function updateDilution() {
+  const slider = document.getElementById('ecosystemSlider');
+  const communitySlider = document.getElementById('communitySlider');
+  const label = document.getElementById('ecosystemPtsLabel');
+  const scaleLabel = document.getElementById('ecosystemScaleLabel');
+  const communityPctLabel = document.getElementById('communityPctLabel');
+  const communityTokensLabel = document.getElementById('communityTokensLabel');
+  const resultsDiv = document.getElementById('dilutionResults');
+  const noteDiv = document.getElementById('dilutionNote');
+  if (!slider || !resultsDiv) return;
+
+  const SAIL_SUPPLY = 1_000_000_000;
+  const ecosystemPts = parseInt(slider.value);
+  const communityPct = communitySlider ? parseInt(communitySlider.value) / 100 : 0.20;
+  const communityTokens = Math.floor(SAIL_SUPPLY * communityPct);
+
+  // Format helpers
+  const fmt = (v, dec=2) => v.toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+  const fmtPts = v => v >= 1_000_000_000 ? (v/1_000_000_000).toFixed(2) + 'B' : v >= 1_000_000 ? (v/1_000_000).toFixed(1) + 'M' : v >= 1_000 ? (v/1_000).toFixed(0) + 'K' : v.toString();
+
+  label.textContent = fmtPts(ecosystemPts);
+  scaleLabel.textContent = fmtPts(ecosystemPts) + ' pts';
+  if (communityPctLabel) communityPctLabel.textContent = Math.round(communityPct * 100) + '%';
+  if (communityTokensLabel) communityTokensLabel.textContent = fmtPts(communityTokens) + ' tokens';
+
+  // Conversion ratio: if more points than community tokens, pro-rate
+  const conversionRatio = Math.min(1, communityTokens / Math.max(ecosystemPts, 1));
+  const userTokens = Math.floor(_userPoints * conversionRatio);
+  const userPct = (userTokens / SAIL_SUPPLY) * 100;
+
+  // FDV scenarios
+  const scenarios = [
+    { fdv: 5_000_000,   label: 'Bear $5M' },
+    { fdv: 10_000_000,  label: 'Base $10M' },
+    { fdv: 50_000_000,  label: 'Bull $50M' },
+    { fdv: 200_000_000, label: 'Moon $200M' },
+  ];
+
+  const bestScenario = scenarios[scenarios.length - 1];
+  const bestValue = userTokens * (bestScenario.fdv / SAIL_SUPPLY);
+  const baseValue = userTokens * (10_000_000 / SAIL_SUPPLY);
+
+  // Color pct
+  const pctColor = userPct > 0.01 ? 'var(--green)' : userPct > 0.001 ? 'var(--orange)' : 'var(--red)';
+
+  resultsDiv.innerHTML = `
+    <div class="dilution-card highlight">
+      <div class="d-label">Your Supply %</div>
+      <div class="d-value" style="color:${pctColor}">${userPct.toFixed(4)}%</div>
+      <div class="d-sub">${fmt(_userPoints, 0)} of ${fmtPts(ecosystemPts)} total pts</div>
+    </div>
+    <div class="dilution-card ${conversionRatio < 1 ? 'highlight' : ''}">
+      <div class="d-label">Your $SAIL Tokens</div>
+      <div class="d-value" style="color:${conversionRatio < 0.5 ? 'var(--red)' : conversionRatio < 1 ? 'var(--orange)' : 'var(--purple)'}">${fmt(userTokens, 0)}</div>
+      <div class="d-sub">Conversion: ${conversionRatio >= 1 ? '1:1 ✓' : (conversionRatio).toFixed(3) + ':1 ⚠ pro-rated'}</div>
+    </div>
+    <div class="dilution-card">
+      <div class="d-label">Value @ $10M FDV</div>
+      <div class="d-value" style="color:var(--purple)">$${fmt(baseValue)}</div>
+      <div class="d-sub">Current private valuation</div>
+    </div>
+    <div class="dilution-card">
+      <div class="d-label">Value @ $50M FDV</div>
+      <div class="d-value" style="color:${parseFloat(baseValue) > _cashYieldUSD * 3 ? 'var(--green)' : 'var(--orange)'}">$${fmt(userTokens * (50_000_000/SAIL_SUPPLY))}</div>
+      <div class="d-sub">Bull case scenario</div>
+    </div>
+  `;
+
+  // Contextual note
+  const earlyMultiple = baseValue / Math.max(_cashYieldUSD, 0.01);
+  let noteText = '';
+
+  const conversionNote = conversionRatio < 1 
+    ? `<br><strong style="color:var(--orange)">⚠ Pro-rata active:</strong> ${fmtPts(ecosystemPts)} points > ${fmtPts(communityTokens)} community tokens — conversion at <strong>${(conversionRatio).toFixed(3)}:1</strong> (${fmt(_userPoints,0)} pts → ${fmt(userTokens,0)} $SAIL).`
+    : `<br>✓ No pro-rata needed — ${fmtPts(ecosystemPts)} points fit within ${fmtPts(communityTokens)} community allocation.`;
+
+  if (ecosystemPts < 5_000_000) {
+    noteText = `🟢 <strong style="color:var(--green)">Early adopter advantage confirmed.</strong> With only ${fmtPts(ecosystemPts)} points in the ecosystem, your ${fmt(_userPoints, 0)} points represent ${userPct.toFixed(3)}% of supply — a meaningful position. At $10M FDV your points are already worth <strong>${earlyMultiple.toFixed(0)}x</strong> the cash yield.${conversionNote}`;
+  } else if (ecosystemPts < 100_000_000) {
+    noteText = `🟡 <strong style="color:var(--orange)">Moderate dilution.</strong> At ${fmtPts(ecosystemPts)} total points your share is ${userPct.toFixed(4)}%. The $SAIL thesis holds if FDV > $10M — but cash yield becomes the reliable floor.${conversionNote}`;
+  } else {
+    noteText = `🔴 <strong style="color:var(--red)">High dilution scenario.</strong> ${fmtPts(ecosystemPts)} total points distributed. Your share: ${userPct.toFixed(6)}%. At this scale $SAIL is highly speculative — cash yield + protocol airdrop exposure are primary drivers.${conversionNote}`;
+  }
+
+  if (noteDiv) noteDiv.innerHTML = noteText;
+}
+
+// ── POINTS & AIRDROP LAYER ──────────────────────────────
+function renderPointsLayer(tokenTxs, addr) {
+  const panel = document.getElementById('pointsPanel');
+  if (!panel) return;
+  panel.style.display = 'block';
+
+  // --- Core params from Sail docs ---
+  const SAIL_FDV_PRIVATE    = 10_000_000;    // $10M private valuation
+  const SAIL_SUPPLY         = 1_000_000_000; // 1B tokens
+  const POINT_VALUE_USD     = SAIL_FDV_PRIVATE / SAIL_SUPPLY; // $0.01
+  const APY_TARGET          = 0.20;          // 20% target
+  const APY_USD             = 0.0182;        // 1.82% euro yield (from dashboard)
+  const APY_POINTS          = Math.max(0, APY_TARGET - APY_USD); // 18.18%
+  // Sail docs: "Pre-Referral Program users get 10% multiplier"
+  // Empirical: real=1729.4 vs formula=1626 → ratio ~1.064 ≈ referral+tier bonus
+  const REFERRAL_MULTIPLIER = 1.063;
+
+  // --- Compute window ---
+  const times = tokenTxs.map(t => parseInt(t.timeStamp)).filter(Boolean);
+  const windowDays = times.length > 1 ? (Math.max(...times) - Math.min(...times)) / 86400 : currentWindowDays || 23;
+
+  // --- Capital estimate (largest single move) ---
+  let maxMove = 0;
+  tokenTxs.forEach(tx => {
+    const amt = parseFloat(tx.total) / Math.pow(10, tx.decimals || 18);
+    if (!isNaN(amt) && amt > 0 && amt < 50000) maxMove = Math.max(maxMove, amt);
+  });
+  const capital = Math.abs(maxMove > 100 ? maxMove * 1.05 : 1452);
+
+  // --- Points calculation (from Sail docs formula) ---
+  // daily_points_value_usd = B * (APY_points / 365)
+  // points_awarded = daily_points_value_usd / P
+  const dailyPointsUSD = capital * (APY_POINTS / 365);
+  const dailyPoints = (dailyPointsUSD / POINT_VALUE_USD) * REFERRAL_MULTIPLIER;
+  const totalPoints = dailyPoints * windowDays;
+  const totalPointsValueUSD = totalPoints * POINT_VALUE_USD;
+
+  // Cash yield
+  const cashYieldUSD = capital * (APY_USD / 365) * windowDays;
+
+  // Store globally for dilution simulator
+  _userPoints = totalPoints;
+  _windowDays = windowDays;
+  _capital = capital;
+  _cashYieldUSD = cashYieldUSD;
+
+  // --- Render metrics ---
+  const metricsDiv = document.getElementById('pointsMetrics');
+  if (!metricsDiv) return;
+
+  const fmt = (v, dec=2) => v.toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+
+  metricsDiv.innerHTML = `
+    <div class="points-card">
+      <div class="p-label">$SAIL Points Accumulated</div>
+      <div class="p-value" style="color:var(--purple)">${fmt(totalPoints, 0)}</div>
+      <div class="p-sub">${windowDays.toFixed(0)} days × ${fmt(dailyPoints, 0)} pts/day (incl. ×1.063 multiplier)</div>
+    </div>
+    <div class="points-card">
+      <div class="p-label">Points Value Today</div>
+      <div class="p-value" style="color:var(--purple)">$${fmt(totalPointsValueUSD)}</div>
+      <div class="p-sub">@ $0.01/pt (FDV $10M, private)</div>
+    </div>
+    <div class="points-card">
+      <div class="p-label">Cash Yield (Euro APY)</div>
+      <div class="p-value" style="color:var(--green)">$${fmt(cashYieldUSD)}</div>
+      <div class="p-sub">1.82% APY on ~$${fmt(capital, 0)}</div>
+    </div>
+    <div class="points-card">
+      <div class="p-label">Points APY Gap</div>
+      <div class="p-value" style="color:var(--orange)">${(APY_POINTS * 100).toFixed(2)}%</div>
+      <div class="p-sub">Target 20% − Cash 1.82%</div>
+    </div>
+  `;
+
+  // --- FDV Scenarios ---
+  const scenarios = [
+    { label: 'Bear — $5M',    fdv: 5_000_000,   note: 'Below current private val.' },
+    { label: 'Base — $10M',   fdv: 10_000_000,  note: 'Current private valuation' },
+    { label: 'Bull — $50M',   fdv: 50_000_000,  note: 'Small-cap DeFi comparable' },
+    { label: 'Moon — $200M',  fdv: 200_000_000, note: 'Mid-cap DeFi protocol' },
+    { label: 'Ultra — $500M', fdv: 500_000_000, note: 'Top DeFi protocol range' },
+  ];
+
+  const windowYears = windowDays / 365;
+  const tbody = document.getElementById('scenariosBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = scenarios.map(s => {
+    const price = s.fdv / SAIL_SUPPLY;
+    const ptVal = totalPoints * price;
+    const totalReturn = cashYieldUSD + ptVal;
+    const roi = capital > 0 ? ((totalReturn / capital) / windowYears * 100).toFixed(1) : '0';
+    const roiColor = parseFloat(roi) > 20 ? 'var(--green)' : parseFloat(roi) > 5 ? 'var(--orange)' : 'var(--red)';
+    const isBase = s.fdv === 10_000_000;
+    return `
+      <tr style="${isBase ? 'background:rgba(167,139,250,0.05)' : ''}">
+        <td style="color:#fff;font-weight:${isBase ? '700' : '400'}">${s.label} ${isBase ? '← current' : ''}</td>
+        <td style="color:var(--purple);font-family:monospace">$${price.toFixed(4)}/SAIL</td>
+        <td style="color:var(--purple);font-weight:600">$${fmt(ptVal)}</td>
+        <td style="color:var(--green);font-weight:600">$${fmt(totalReturn)}</td>
+        <td style="color:${roiColor};font-weight:700">${roi}% ann.</td>
+      </tr>`;
+  }).join('');
+
+  // --- Protocol Exposure ---
+  const protocols = [
+    { name: 'Morpho Blue', status: 'Active — vault allocations', color: '#2470ff' },
+    { name: 'Fluid (fEURC)', status: 'Active — yield farming', color: '#00e676' },
+    { name: 'Gauntlet', status: 'Active — risk curator', color: '#ce93d8' },
+    { name: 'Moonwell', status: 'Underlying market', color: '#53cbc8' },
+    { name: 'Sail $SAIL', status: 'Points → token TBD', color: '#ffb300' },
+  ];
+
+  // Add any unknown protocols from tokenTxs
+  const seenAddrs = new Set();
+  tokenTxs.forEach(tx => {
+    [tx.to, tx.contractAddress].forEach(a => {
+      if (a && a !== addr.toLowerCase() && a !== '0x0000000000000000000000000000000000000000') {
+        seenAddrs.add(a.toLowerCase());
+      }
+    });
+  });
+
+  const exposureDiv = document.getElementById('protocolExposure');
+  if (!exposureDiv) return;
+  exposureDiv.innerHTML = protocols.map(p => `
+    <div class="exposure-pill">
+      <div class="exposure-dot" style="background:${p.color};box-shadow:0 0 6px ${p.color};"></div>
+      <div>
+        <div style="font-weight:600;color:#fff;">${p.name}</div>
+        <div style="font-size:0.85em;color:var(--muted);">${p.status}</div>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="exposure-pill" style="border-style:dashed;opacity:0.6;">
+      <div class="exposure-dot" style="background:var(--muted);box-shadow:none;"></div>
+      <div style="color:var(--muted);font-style:italic;">+${Math.max(0, seenAddrs.size - 3)} unknown contracts</div>
+    </div>
+  `;
+
+  // Update dilution simulator with fresh data
+  setTimeout(updateDilution, 100);
+
+  // --- Airdrop Note ---
+  const noteDiv = document.getElementById('airdropNote');
+  if (!noteDiv) return;
+  noteDiv.innerHTML = `
+    <strong>⚠️ The real yield of this position is not 1.82%.</strong><br><br>
+    Sail combines three yield layers simultaneously: <strong>1.82% cash (EURC)</strong>, 
+    <strong>18.18% in $SAIL points</strong> (convertible 1:1 at token launch), 
+    and <strong>passive on-chain exposure</strong> to Morpho, Fluid, Gauntlet, and Moonwell 
+    — each of which may have future airdrop programs. 
+    The agent's ${tokenTxs.length} transactions over ${windowDays.toFixed(0)} days generate 
+    verifiable on-chain activity across all these protocols simultaneously.<br><br>
+    <strong style="color:var(--orange)">Key risk:</strong> 
+    $SAIL token valuation is entirely speculative. At the current private FDV of $10M, 
+    <strong>${fmt(totalPoints, 0)} points ≈ $${fmt(totalPointsValueUSD)}</strong>. 
+    If $SAIL launches at $50M FDV, those points become worth 
+    <strong>$${fmt(totalPoints * (50_000_000/SAIL_SUPPLY))}</strong>. 
+    If it launches at zero, the cash yield alone was ${(APY_USD * 100).toFixed(2)}% annualized — 
+    which is what you'd compare to a traditional savings account.
+  `;
+}
+
+// Auto-run on load with prefilled address
+window.onload = () => {
+  setTimeout(runScan, 500);
+};
+</script>
+</body>
+</html>

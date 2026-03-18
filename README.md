@@ -35,14 +35,22 @@ Paste any Sail smart account address (EVM) and get:
 
 1. Open the [live tool](https://alex-lamport.github.io/sail-forensics/)
 2. Paste your Sail smart account address
-3. Select time window (7D / 30D / 90D / ALL)
-4. Click SCAN
+3. *(Optional)* Enter a free Basescan API key for real-time data
+4. Select time window (7D / 30D / 90D / ALL)
+5. Click SCAN
 
-No API key required. Uses [Blockscout](https://base.blockscout.com) public API.
+## Data sources
+
+| Source | Speed | Setup |
+|--------|-------|-------|
+| [Blockscout](https://base.blockscout.com) | ~5h delay | No key needed (default) |
+| [Basescan](https://basescan.org) | Real-time | Free API key from [basescan.org/myapikey](https://basescan.org/myapikey) |
+
+> **Note:** Blockscout is used by default — no API key required. For real-time data (matching what you see on Basescan), enter a free Basescan API key in the optional field.
 
 ## Stack
 
-Vanilla HTML/CSS/JS — single file. Chart.js + chartjs-plugin-annotation. Blockscout API v2.
+Vanilla HTML/CSS/JS — single file. Chart.js + chartjs-plugin-annotation. Blockscout API v2 + Basescan API.
 
 ## Disclaimer
 

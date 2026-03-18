@@ -921,14 +921,19 @@
     <div class="input-label">Smart Account Address (EVM)</div>
     <div class="input-row">
       <input class="addr-input" id="addrInput" 
-        value="0x90775c638a859F5D54866A7758bB6f222c4d9Fe5"
-        placeholder="0x...">
+        placeholder="Paste your Sail smart account address (0x...)">
       <select id="networkSelect" style="background:var(--bg);border:1px solid var(--border-bright);color:var(--text);font-family:var(--mono);font-size:0.82em;padding:12px 14px;border-radius:6px;outline:none;cursor:pointer;">
         <option value="base">Base</option>
         <option value="ethereum">Ethereum</option>
         <option value="optimism">Optimism</option>
       </select>
       <button class="scan-btn" id="scanBtn" onclick="runScan()">⬡ SCAN</button>
+    </div>
+    <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <input class="addr-input" id="apiKeyInput" 
+        placeholder="Basescan API key (optional — for real-time data)"
+        style="max-width:380px;font-size:0.75em;color:var(--muted);">
+      <span style="font-size:0.65em;color:var(--muted);letter-spacing:1px;">Get free key → <a href="https://basescan.org/myapikey" target="_blank" style="color:var(--cyan);text-decoration:none;">basescan.org/myapikey</a></span>
     </div>
   </div>
 
@@ -1081,6 +1086,7 @@
 const NETWORKS = {
   base: {
     api: 'https://base.blockscout.com/api/v2',
+    basescanApi: 'https://api.basescan.org/api',
     explorer: 'https://basescan.org/tx/',
     name: 'Base'
   },
@@ -1340,14 +1346,45 @@ async function runScan() {
   setStatus('loading', 'FETCHING DATA');
 
   try {
-    // PRIMARY: Token transfers — paginated
-    const rawToken = await fetchAllPages(
-      `${net.api}/addresses/${addr}/token-transfers`,
-      currentWindowDays,
-      'fetchProgress',
-      'fetchPage'
-    );
-    const tokenTxs = rawToken.map(normalizeTokenTx);
+    // PRIMARY: Token transfers
+    // If Basescan API key is provided, use it for real-time data
+    const apiKey = document.getElementById('apiKeyInput')?.value?.trim();
+    let tokenTxs = [];
+
+    if (apiKey && net.basescanApi) {
+      // Basescan route — real-time, requires free API key
+      const bsUrl = `${net.basescanApi}?module=account&action=tokentx&address=${addr}&sort=desc&apikey=${apiKey}`;
+      const bsRes = await fetch(bsUrl);
+      const bsData = await bsRes.json();
+      if (bsData.status === '1' && bsData.result) {
+        const cutoff = currentWindowDays > 0 ? (Date.now() / 1000) - (currentWindowDays * 86400) : 0;
+        const filtered = bsData.result.filter(tx => currentWindowDays === 0 || parseInt(tx.timeStamp) >= cutoff);
+        tokenTxs = filtered.map(tx => ({
+          hash: tx.hash,
+          contractAddress: tx.contractAddress,
+          tokenSymbol: tx.tokenSymbol || 'UNKNOWN',
+          tokenName: tx.tokenName || '',
+          tokenType: 'ERC-20',
+          from: tx.from,
+          to: tx.to,
+          total: tx.value,
+          decimals: parseInt(tx.tokenDecimal || '18'),
+          timeStamp: tx.timeStamp
+        }));
+        setStatus('live', `LIVE — Basescan · ${tokenTxs.length} transfers (real-time)`);
+      } else {
+        throw new Error('Basescan API error: ' + (bsData.message || 'check API key'));
+      }
+    } else {
+      // Blockscout route — free but may lag ~5h
+      const rawToken = await fetchAllPages(
+        `${net.api}/addresses/${addr}/token-transfers`,
+        currentWindowDays,
+        'fetchProgress',
+        'fetchPage'
+      );
+      tokenTxs = rawToken.map(normalizeTokenTx);
+    }
 
     // SECONDARY: Normal txs — single page (for gas/method context only)
     const res2 = await fetch(`${net.api}/addresses/${addr}/transactions`);
@@ -1355,7 +1392,7 @@ async function runScan() {
     const txs = rawTxs.map(normalizeTx);
 
     const windowLabel = currentWindowDays === 0 ? 'ALL' : currentWindowDays + 'D';
-    setStatus('live', `LIVE — ${net.name.toUpperCase()} · ${windowLabel} · ${tokenTxs.length} transfers`);
+    if (!apiKey) setStatus('live', `LIVE — ${net.name.toUpperCase()} · ${windowLabel} · ${tokenTxs.length} transfers`);
     renderResults(addr, txs, tokenTxs, net);
 
   } catch (err) {
@@ -2094,10 +2131,7 @@ function renderPointsLayer(tokenTxs, addr) {
   `;
 }
 
-// Auto-run on load with prefilled address
-window.onload = () => {
-  setTimeout(runScan, 500);
-};
+// No auto-run — user enters their own address
 </script>
 </body>
 </html>
